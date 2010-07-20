@@ -1,0 +1,52 @@
+#!/usr/bin/perl
+#removes line wrapping and corrects other formating in book files
+# Execute in seperate terminals to take edvantage of dual prosessors
+# find . -name '[A-M]\*.pdf' -exec pdftotext -layout -nopgbrk {} \; 
+# find . -name '[N-Z]\*.pdf' -exec pdftotext -layout -nopgbrk {} \;
+###
+# find Science\ Fiction\ and\ Fantasy/ -name '[A-M]*.txt' -exec cp {} -a --target-directory=txt/ --parents \;
+#find Science\ Fiction\ and\ Fantasy/ -name '[N-Z]*.txt' -exec cp {} -a --target-directory=txt/ --parents \;
+###
+# find . -name '[A-M]*.txt' -exec perl '~/Desktop/Books/bookScript' {} \;
+# find . -name '[N-Z]*.txt -exec perl '~/Desktop/Books/bookScript' {} \; -exec echo {} \;
+# read in whole file, not just one line or paragraph
+
+use strict;
+use warnings;
+
+undef $/;
+
+my $numArgs = $#ARGV + 1;
+
+foreach my $file (@ARGV){
+
+	open FILE,"<", $file or die $!;
+	
+	my $str = <FILE>;
+
+	#deletes page numbers (numbers with space in front and not followed by something else)
+		$str=~s/\s{5,70}\d{1,4}+(?![ ]\S)//sgm;
+	#removes whitespaces in elipsis
+		$str=~s/\.\s\.\s\. /\.\.\./sgm;
+	#removes \n not preceded by [\" \.] and followed by [words \,\.\'\-] and inserts spaces
+		$str=~s/(?<![\.\"])\n+(?=[\w\,\.\'\"\-])/ /sgm; 
+	#removes lines breaks preceded by a line break and followed by words an inserts one break only
+		$str=~s/(?<=\n)\n(?=[\w\,\.\'\"\t])//sgm;
+	#removes move that 3 line breaks in a row and replaces with 2
+		$str=~s/\n{3,}/\n\n/sgm;
+	#removes spaces used as tabs
+		$str=~s/(?<=\n)[ ]{1,8}+(?=[\w\,\.\'\"\-])/\t/sgm;
+	#indents un-indented quotes
+		$str=~s/\n+(?=\")/\n\t/sgm; 
+	#indents un-indented paragraphs
+		$str=~s/\n+(?=\w)/\n\t/sgm; 
+
+	close FILE;
+
+	#print $str;
+	open FILE,"+<", $file or die $!;
+	print FILE $str;
+	close FILE;
+
+}
+
